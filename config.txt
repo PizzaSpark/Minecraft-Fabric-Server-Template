@@ -1,5 +1,9 @@
+# server
 version=1.20.6
 allocated_ram=2
 
 # startup
 check_for_updates=true
+
+# port-forwarding
+playitgg_path="C:\Program Files\playit_gg\bin"

@@ -6,4 +6,4 @@ allocated_ram=2
 check_for_updates=true
 
 # port-forwarding
-playitgg_path="C:\Program Files\playit_gg\bin"
+playitgg_path=C:\\Program Files\\playit_gg\\bin

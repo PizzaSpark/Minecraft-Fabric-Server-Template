@@ -9,10 +9,9 @@ Write-Host "`nConfiguration:"
 Write-Host "`tversion: $($config.version)"
 Write-Host "`tallocated_ram: $($config.allocated_ram)GB"
 Write-Host "`tcheck_for_updates: $($config.check_for_updates)"
-Write-Host "`tplayitgg_path: $($config.playitgg_path)"
 
 # Start the playit.gg program
-Start-Process -FilePath "$($config.playitgg_path.Replace('\', '\\'))\playit.exe"
+Invoke-Item $($config.playitgg_path + "\playit.exe")
 
 # Function to download the latest PaperMC jar
 function Download-LatestPaper {

@@ -6,7 +6,7 @@ if ($confirmation -ne 'yes') {
 }
 
 # Define server path and backup path
-$serverPath = 'papermc_server'
+$serverPath = 'fabricmc_server'
 $backupPath = 'backups'
 
 # Create a directory for the backups if it doesn't exist

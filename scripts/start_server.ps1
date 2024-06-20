@@ -29,27 +29,34 @@ function Download-LatestFabric {
 
         # Find the latest stable loader
         $latestLoader = $null
-        foreach ($loader in $latestFabricData.loader) {
-            if ($loader.stable -eq $true) {
-                if ($latestLoader -eq $null -or [Version]$loader.version -gt [Version]$latestLoader.version) {
+        foreach ($loader in $latestFabricData) {
+            if ($loader.loader.stable -eq $true) {
+                if ($latestLoader -eq $null -or [Version]$loader.loader.version -gt [Version]$latestLoader.loader.version) {
                     $latestLoader = $loader
                 }
             }
         }
 
         if ($latestLoader -ne $null) {
+            $installerVersion = "1.0.1"
             $jarName = "fabric-$version.jar"
-            $downloadUrl = "https://meta.fabricmc.net/v2/versions/loader/$version/$($latestLoader.version)/$($latestLoader.intermediary.version)/server/jar"
+            $downloadUrl = "https://meta.fabricmc.net/v2/versions/loader/$version/$($latestLoader.loader.version)/$installerVersion/server/jar"
             $localBuild = Get-Content -Path "$serverPath\build.txt" -ErrorAction SilentlyContinue
 
-            if ($localBuild -ne $latestLoader.version) {
-                Write-Host "`tLatest Fabric loader version: $($latestLoader.version)"
-                (New-Object Net.WebClient).DownloadFile($downloadUrl, "$serverPath\fabric.jar")
-                Write-Host "`tDownload complete: $jarName"
-                $latestLoader.version | Out-File -FilePath "$serverPath\build.txt"
+            if ($localBuild -ne $latestLoader.loader.version) {
+                Write-Host "`tLatest Fabric loader version: $($latestLoader.loader.version)"
+                try {
+                    (New-Object Net.WebClient).DownloadFile($downloadUrl, "$serverPath\fabric.jar")
+                    Write-Host "`tDownload complete: $jarName"
+                    $latestLoader.loader.version | Out-File -FilePath "$serverPath\build.txt"
+                } catch {
+                    Write-Host "Error: Unable to download the file from $downloadUrl"
+                }
             } else {
                 Write-Host "`tLocal version is up-to-date."
             }
+        } else {
+            Write-Host "`tNo stable loader version found."
         }
     } else {
         Write-Host "`nSkipping update check as per configuration."

@@ -1,5 +1,5 @@
 # Define server path
-$serverPath = "papermc_server"
+$serverPath = "fabricmc_server"
 
 # Load configuration
 $config = ConvertFrom-StringData (Get-Content -Path config.txt -Raw)
@@ -13,28 +13,40 @@ Write-Host "`tcheck_for_updates: $($config.check_for_updates)"
 # Start the playit.gg program
 Invoke-Item $($config.playitgg_path + "\playit.exe")
 
-# Function to download the latest PaperMC jar
-function Download-LatestPaper {
+# Function to download the latest FabricMC jar
+function Download-LatestFabric {
     if ($config.check_for_updates -eq "true") {
         # Create a directory for the server if it doesn't exist
         if (!(Test-Path -Path $serverPath)) {
             New-Item -ItemType Directory -Path $serverPath
         }
 
-        # Download the specified PaperMC build
-        Write-Host "`nChecking PaperMC build for version $($config.version)..."
+        # Download the latest FabricMC loader data
+        Write-Host "`nChecking for the latest FabricMC build for version $($config.version)..."
         $version = $config.version
-        $builds = Invoke-RestMethod -Uri "https://api.papermc.io/v2/projects/paper/versions/$version/builds"
-        $latestBuild = $builds.builds | Where-Object { $_.channel -eq "default" } | ForEach-Object { $_.build } | Select-Object -Last 1
-        if ($latestBuild -ne $null) {
-            $jarName = "paper-$version-$latestBuild.jar"
-            $downloadUrl = "https://api.papermc.io/v2/projects/paper/versions/$version/builds/$latestBuild/downloads/$jarName"
+        $fabricApiUrl = "https://meta.fabricmc.net/v2/versions/loader/$version"
+        $latestFabricData = Invoke-RestMethod -Uri $fabricApiUrl
+
+        # Find the latest stable loader
+        $latestLoader = $null
+        foreach ($loader in $latestFabricData.loader) {
+            if ($loader.stable -eq $true) {
+                if ($latestLoader -eq $null -or [Version]$loader.version -gt [Version]$latestLoader.version) {
+                    $latestLoader = $loader
+                }
+            }
+        }
+
+        if ($latestLoader -ne $null) {
+            $jarName = "fabric-$version.jar"
+            $downloadUrl = "https://meta.fabricmc.net/v2/versions/loader/$version/$($latestLoader.version)/$($latestLoader.intermediary.version)/server/jar"
             $localBuild = Get-Content -Path "$serverPath\build.txt" -ErrorAction SilentlyContinue
-            if ($localBuild -ne $latestBuild) {
-                Write-Host "`tLatest build number: $latestBuild"
-                (New-Object Net.WebClient).DownloadFile($downloadUrl, "$serverPath\paper.jar")
+
+            if ($localBuild -ne $latestLoader.version) {
+                Write-Host "`tLatest Fabric loader version: $($latestLoader.version)"
+                (New-Object Net.WebClient).DownloadFile($downloadUrl, "$serverPath\fabric.jar")
                 Write-Host "`tDownload complete: $jarName"
-                $latestBuild | Out-File -FilePath "$serverPath\build.txt"
+                $latestLoader.version | Out-File -FilePath "$serverPath\build.txt"
             } else {
                 Write-Host "`tLocal version is up-to-date."
             }
@@ -48,17 +60,17 @@ function Download-LatestPaper {
 function Run-Server {
     Set-Location -Path $serverPath
     Write-Host "`nStarting server with $($config.allocated_ram)GB of RAM..."
-    if (Test-Path -Path .\paper.jar) {
-        java -Xmx"$($config.allocated_ram)G" -Xms"$($config.allocated_ram)G" -jar .\paper.jar --nogui
+    if (Test-Path -Path .\fabric.jar) {
+        java -Xmx"$($config.allocated_ram)G" -Xms"$($config.allocated_ram)G" -jar .\fabric.jar nogui
     } else {
-        Write-Host "Error: Unable to access jarfile paper.jar"
+        Write-Host "Error: Unable to access jarfile fabric.jar"
     }
 
     Set-Location -Path ..
 }
 
 # Call the functions
-Download-LatestPaper
+Download-LatestFabric
 Run-Server
 
 # End script
